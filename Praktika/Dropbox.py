@@ -6,8 +6,8 @@ import json
 import helper
 
 
-app_key = 'dq82mil0e2m2w83'
-app_secret = 'tgg56kqiivdezl9'
+app_key = ''
+app_secret = ''
 server_addr = "localhost"
 server_port = 8070
 redirect_uri = "http://" + server_addr + ":" + str(server_port)
