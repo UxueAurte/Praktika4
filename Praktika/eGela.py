@@ -2,180 +2,220 @@
 #Irakasgaia eta taldea: Web Sistemak - 31. Taldea
 #Entrega-data: 2026ko maiatzaren 15a
 #Ataza konpilatu: Karpetan sartu -> python eGela.py <erabiltzailea> <'IZEN ABIZENA'>
+# -*- coding: UTF-8 -*-
+from tkinter import messagebox
 import requests
-import sys
-import getpass
+import urllib
+from urllib.parse import unquote
 from bs4 import BeautifulSoup
-import os
-import csv
-import urllib.parse
+import time
+import helper
 
+class eGela:
+    _login = 0
+    _cookie = ""
+    _curso = ""
+    _refs = []
+    _root = None
+    _session = None
 
-def main():
-    # 1. Terminaletik parametroak jaso
-    if len(sys.argv) < 3:
-        print("Erabilera: python eGela_downloader.py <erabiltzailea> <'IZENA ABIZENA'>")
-        sys.exit(1)
+    def __init__(self, root):
+        self._root = root
 
-    username = sys.argv[1]
-    full_name = sys.argv[2]
-    password = getpass.getpass(f"Sartu {username} erabiltzailearen pasahitza: ")
+    def check_credentials(self, username, password, event=None):
+        if hasattr(username, 'get'):
+            username = username.get()
+        if hasattr(password, 'get'):
+            password = password.get()
 
-    session = requests.Session()
+        popup, progress_var, progress_bar = helper.progress("check_credentials", "Logging into eGela...")
+        progress = 0
+        progress_var.set(progress)
+        progress_bar.update()
 
-    # --- 1. ESKAERA: GET Login orria ---
-    url1 = "https://egela.ehu.eus/login/index.php"
-    r1 = session.get(url1)
-    print(f"\n1. ESKAERA: GET {url1}")
-    print(f"1. ERANTZUNA: {r1.status_code} {r1.reason}")
+        self._session = requests.Session()
+        print("##### 1. PETICION #####")
+        metodo = 'GET'
+        uri = "https://egela.ehu.eus/login/index.php"
+        #############################################
+        # RELLENAR CON CODIGO DE LA PETICION HTTP
+        # Y PROCESAMIENTO DE LA RESPUESTA HTTP
+        #############################################
+        r1 = self._session.get(uri)
+        print(f"1. ERANTZUNA: {r1.status_code} {r1.reason}")
 
-    soup1 = BeautifulSoup(r1.text, 'html.parser')
-    logintoken = soup1.find('input', {'name': 'logintoken'})['value']
+        soup1 = BeautifulSoup(r1.text, 'html.parser')
+        logintoken = soup1.find('input', {'name': 'logintoken'})['value']
 
-    # --- 2. ESKAERA: POST Login ---
-    payload = {'username': username, 'password': password, 'logintoken': logintoken}
-    r2 = session.post(url1, data=payload, allow_redirects=True)
-    print(f"\n2. ESKAERA: POST {url1}")
-    print(f"2. ERANTZUNA: {r2.status_code} {r2.reason}")
+        progress = 25
+        progress_var.set(progress)
+        progress_bar.update()
+        time.sleep(1)
 
-    # --- 3. ESKAERA: GET Profila (Egiaztapena) ---
-    profile_url = "https://egela.ehu.eus/user/profile.php"
-    r4 = session.get(profile_url)
+        print("\n##### 2. PETICION #####")
+        #############################################
+        # RELLENAR CON CODIGO DE LA PETICION HTTP
+        # Y PROCESAMIENTO DE LA RESPUESTA HTTP
+        #############################################
+        payload = {'username': username, 'password': password, 'logintoken': logintoken}
+        r2 = self._session.post(uri, data=payload, allow_redirects=True)
+        print(f"2. ERANTZUNA: {r2.status_code} {r2.reason}")
 
-    if full_name.upper() in r4.text.upper():
-        print(f"\nKautotzea ondo burutu da. Kaixo, {full_name}!")
+        progress = 50
+        progress_var.set(progress)
+        progress_bar.update()
+        time.sleep(1)
 
-        # --- Web Sistemak irakasgaia bilatu ---
-        soup4 = BeautifulSoup(r4.text, 'html.parser')
-        ikasgai_link = soup4.find('a', string=lambda t: t and "Web Sistemak" in t)
+        print("\n##### 3. PETICION #####")
+        #############################################
+        # RELLENAR CON CODIGO DE LA PETICION HTTP
+        # Y PROCESAMIENTO DE LA RESPUESTA HTTP
+        #############################################
+        profile_url = "https://egela.ehu.eus/user/profile.php"
+        r3 = self._session.get(profile_url)
+        print(f"3. ERANTZUNA: {r3.status_code} {r3.reason}")
+
+        progress = 75
+        progress_var.set(progress)
+        progress_bar.update()
+        time.sleep(1)
+
+        print("\n##### 4. PETICION #####")
+        #############################################
+        # RELLENAR CON CODIGO DE LA PETICION HTTP
+        # Y PROCESAMIENTO DE LA RESPUESTA HTTP
+        #############################################
+        soup3 = BeautifulSoup(r3.text, 'html.parser')
+        ikasgai_link = soup3.find('a', string=lambda t: t and "Web Sistemak" in t)
         if not ikasgai_link:
-            ikasgai_link = soup4.find('a', {'title': lambda t: t and "Web Sistemak" in t})
+            ikasgai_link = soup3.find('a', {'title': lambda t: t and "Web Sistemak" in t})
 
         if ikasgai_link:
             websistemak_url = ikasgai_link['href']
-            print(f"\n5. ESKAERA: GET {websistemak_url}")
-            r5 = session.get(websistemak_url)
-            soup5 = BeautifulSoup(r5.text, 'html.parser')
-
-            # --- Erlaitzak (Gaiak) identifikatu ---
-            erlaitzak = soup5.find_all('a', class_=lambda x: x and ('nav-link' in x or 'nav-item' in x))
-            gai_urleak = []
-            print("\nIdentifikatutako gaiak (Erlaitzak):")
-            for erlaitz in erlaitzak:
-                izenburua = erlaitz.get_text(strip=True).replace("Nabarmenduta", "").strip()
-                uri = erlaitz.get('href', '')
-                if izenburua and "section=" in uri:
-                    print(f"- {izenburua}: {uri}")
-                    gai_urleak.append(uri.split('#')[0])  # Kendu #tabs-tree-start
-
-            # --- 5. ATALA: PDF fitxategiak listatu ---
-            print(f"\nPDF fitxategiak bilatzen...")
-            deskargatutakoak = set()
-            pdf_lista = []
-
-            for gai_url in gai_urleak:
-                r_gai = session.get(gai_url)
-                soup_gai = BeautifulSoup(r_gai.text, 'html.parser')
-                estekak = soup_gai.find_all('a', href=True)
-
-                for esteka in estekak:
-                    href = esteka.get('href', '')
-                    if "/mod/resource/" in href and href not in deskargatutakoak:
-                        deskargatutakoak.add(href)
-
-                        r_resource = session.get(href, allow_redirects=True)
-                        final_url = r_resource.url
-                        content_type = r_resource.headers.get('Content-Type', '')
-
-                        # Moodle-k zuzenean PDF-ra birbidaltzen du normalean
-                        if '/pluginfile.php/' in final_url and '.pdf' in final_url.lower():
-                            pdf_url = final_url
-                        elif 'application/pdf' in content_type:
-                            pdf_url = final_url
-                        else:
-                            # HTML orrian bilatu pluginfile esteka
-                            soup_resource = BeautifulSoup(r_resource.text, 'html.parser')
-                            pdf_tag = soup_resource.find('a', href=lambda x: x and '/pluginfile.php/' in x)
-                            if not pdf_tag:
-                                pdf_tag = soup_resource.find('object', data=lambda x: x and '/pluginfile.php/' in x)
-                                if pdf_tag:
-                                    pdf_url = pdf_tag['data']
-                                else:
-                                    continue
-                            else:
-                                pdf_url = pdf_tag['href']
-
-                            if '.pdf' not in pdf_url.lower():
-                                continue
-
-                        filename = urllib.parse.unquote(pdf_url.split('/')[-1].split('?')[0])
-                        if not filename.lower().endswith('.pdf'):
-                            filename += '.pdf'
-                        pdf_lista.append({'pdf_name': filename, 'pdf_link': pdf_url})
-
-            print(f"\nAurkitutako PDFak ({len(pdf_lista)}):")
-            for i, pdf in enumerate(pdf_lista):
-                print(f"  {i}. {pdf['pdf_name']}")
-                print(f"     {pdf['pdf_link']}")
-
-            # --- PDF fitxategiak deskargatu ---
-            deskarga_karpeta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "deskargak")
-            os.makedirs(deskarga_karpeta, exist_ok=True)
-            print(f"\nPDFak deskargatzen '{deskarga_karpeta}' karpetara...")
-
-            for pdf in pdf_lista:
-                dest_path = os.path.join(deskarga_karpeta, pdf['pdf_name'])
-                r_pdf = session.get(pdf['pdf_link'], stream=True)
-                with open(dest_path, 'wb') as f_pdf:
-                    for chunk in r_pdf.iter_content(chunk_size=8192):
-                        f_pdf.write(chunk)
-                print(f"  -> Deskargatuta: {pdf['pdf_name']}")
-
-            # --- 6. ATALA: Zereginak bildu eta CSVan gorde ---
-            csv_izena = "zereginak.csv"
-            print(f"\nZereginak bilatzen eta '{csv_izena}' fitxategian gordetzen...")
-            zereginen_zerrenda = []
-
-            for gai_url in gai_urleak:
-                r_gai = session.get(gai_url)
-                soup_gai = BeautifulSoup(r_gai.text, 'html.parser')
-                zeregin_estekak = soup_gai.find_all('a', href=lambda x: x and "/mod/assign/view.php" in x)
-
-                for z_esteka in zeregin_estekak:
-                    url_zeregin = z_esteka['href']
-                    if not any(z['Esteka'] == url_zeregin for z in zereginen_zerrenda):
-                        izenburua = z_esteka.get_text(strip=True).replace("Zeregina", "").strip()
-                        r_zeregin = session.get(url_zeregin)
-                        soup_zeregin = BeautifulSoup(r_zeregin.text, 'html.parser')
-
-                        data_el = soup_zeregin.find('td', class_='cell c1 lastcol')
-                        if not data_el:
-                            data_testua = soup_zeregin.find(string=lambda t: t and ("Epemuga" in t or "Due date" in t))
-                            if data_testua: data_el = data_testua.find_next()
-
-                        entrega_data = data_el.get_text(strip=True) if data_el else "Ez dago datarik"
-                        zereginen_zerrenda.append({
-                            'Izenburua': izenburua,
-                            'Data': entrega_data,
-                            'Esteka': url_zeregin
-                        })
-                        print(f"  -> Aurkituta: {izenburua}")
-
-            with open(csv_izena, mode='w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=['Izenburua', 'Data', 'Esteka'])
-                writer.writeheader()
-                writer.writerows(zereginen_zerrenda)
-
-            print(f"Zeregin guztiak '{csv_izena}' fitxategian gorde dira.")
-            print(f"Lan-direktorioa: {os.getcwd()}")
+            r4 = self._session.get(websistemak_url)
+            print(f"4. ERANTZUNA: {r4.status_code} {r4.reason}")
         else:
-            print("\nEzin izan da 'Web Sistemak' irakasgaia aurkitu.")
+            r4 = None
 
-        input("\nSakatu ENTER programa amaitzeko...")
-    else:
-        print("\nKautotzeak huts egin du. Izena ez dago profilean.")
-        sys.exit(1)
+        progress = 100
+        progress_var.set(progress)
+        progress_bar.update()
+        time.sleep(1)
+        popup.destroy()
 
+        COMPROBACION_DE_LOG_IN = "profile.php" in r3.url and "login" not in r3.url
 
-if __name__ == "__main__":
-    main()
+        if COMPROBACION_DE_LOG_IN:
+            #############################################
+            # ACTUALIZAR VARIABLES
+            #############################################
+            self._login = 1
+            if ikasgai_link:
+                self._curso = websistemak_url
+            self._root.destroy()
+        else:
+            messagebox.showinfo("Alert Message", "Login incorrect!")
+
+    def get_pdf_refs(self):
+        popup, progress_var, progress_bar = helper.progress("get_pdf_refs", "Downloading PDF list...")
+        progress = 0
+        progress_var.set(progress)
+        progress_bar.update()
+
+        print("\n##### 4. PETICION (Página principal de la asignatura en eGela) #####")
+        #############################################
+        # RELLENAR CON CODIGO DE LA PETICION HTTP
+        # Y PROCESAMIENTO DE LA RESPUESTA HTTP
+        #############################################
+        r5 = self._session.get(self._curso)
+        print(f"ERANTZUNA: {r5.status_code} {r5.reason}")
+        soup5 = BeautifulSoup(r5.text, 'html.parser')
+
+        erlaitzak = soup5.find_all('a', class_=lambda x: x and ('nav-link' in x or 'nav-item' in x))
+        gai_urleak = []
+        for erlaitz in erlaitzak:
+            uri = erlaitz.get('href', '')
+            if "section=" in uri:
+                gai_urleak.append(uri.split('#')[0])
+
+        print("\n##### Analisis del HTML... #####")
+        #############################################
+        # ANALISIS DE LA PAGINA DEL AULA EN EGELA
+        # PARA BUSCAR PDFs
+        #############################################
+        deskargatutakoak = set()
+        recursos = []
+        for gai_url in gai_urleak:
+            r_gai = self._session.get(gai_url)
+            soup_gai = BeautifulSoup(r_gai.text, 'html.parser')
+            for esteka in soup_gai.find_all('a', href=True):
+                href = esteka.get('href', '')
+                if "/mod/resource/" in href and href not in deskargatutakoak:
+                    deskargatutakoak.add(href)
+                    recursos.append(href)
+
+        # INICIALIZA Y ACTUALIZAR BARRA DE PROGRESO
+        # POR CADA PDF ANIADIDO EN self._refs
+        progress_step = float(100.0 / len(recursos)) if recursos else 100
+
+        for href in recursos:
+            r_resource = self._session.get(href, allow_redirects=True)
+            final_url = r_resource.url
+            content_type = r_resource.headers.get('Content-Type', '')
+
+            if '/pluginfile.php/' in final_url and '.pdf' in final_url.lower():
+                pdf_url = final_url
+            elif 'application/pdf' in content_type:
+                pdf_url = final_url
+            else:
+                soup_resource = BeautifulSoup(r_resource.text, 'html.parser')
+                pdf_tag = soup_resource.find('a', href=lambda x: x and '/pluginfile.php/' in x)
+                if not pdf_tag:
+                    pdf_tag = soup_resource.find('object', data=lambda x: x and '/pluginfile.php/' in x)
+                    if pdf_tag:
+                        pdf_url = pdf_tag['data']
+                    else:
+                        progress += progress_step
+                        progress_var.set(progress)
+                        progress_bar.update()
+                        continue
+                else:
+                    pdf_url = pdf_tag['href']
+
+                if '.pdf' not in pdf_url.lower():
+                    progress += progress_step
+                    progress_var.set(progress)
+                    progress_bar.update()
+                    continue
+
+            filename = unquote(pdf_url.split('/')[-1].split('?')[0])
+            if not filename.lower().endswith('.pdf'):
+                filename += '.pdf'
+
+            self._refs.append({'pdf_name': filename, 'pdf_link': pdf_url})
+            print(f"  PDF encontrado: {filename}")
+
+            progress += progress_step
+            progress_var.set(progress)
+            progress_bar.update()
+            time.sleep(0.1)
+
+        popup.destroy()
+        return self._refs
+
+    def get_pdf(self, selection):
+
+        print("\t##### descargando  PDF... #####")
+        #############################################
+        # RELLENAR CON CODIGO DE LA PETICION HTTP
+        # Y PROCESAMIENTO DE LA RESPUESTA HTTP
+        #############################################
+        pdf_info = self._refs[selection]
+        pdf_name = pdf_info['pdf_name']
+        pdf_link = pdf_info['pdf_link']
+
+        r = self._session.get(pdf_link, stream=True)
+        pdf_content = r.content
+
+        print(f"\tDescargado: {pdf_name}")
+        return pdf_name, pdf_content
