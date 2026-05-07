@@ -6,8 +6,8 @@ import json
 import helper
 
 
-app_key = ''
-app_secret = ''
+app_key = 'dq82mil0e2m2w83'
+app_secret = 'tgg56kqiivdezl9'
 server_addr = "localhost"
 server_port = 8070
 redirect_uri = "http://" + server_addr + ":" + str(server_port)
@@ -47,7 +47,7 @@ class Dropbox:
                         "<head><title>Proba</title></head>" \
                         "<body>The authentication flow has completed. Close this window.</body>" \
                         "</html>"
-        client_connection.sendall(http_response)
+        client_connection.sendall(http_response.encode(encoding="utf-8"))
         client_connection.close()
         server_socket.close()
 
@@ -60,7 +60,7 @@ class Dropbox:
         # PARA LA OBTENCION DEL ACCESS TOKEN
         #############################################
 
-        #1. Abrir navegador con la URI de autorizacion de Dropbox
+        #1. Nabigatzailea zabaldu Dropbox-eko autorizazio URI-arekin
         params = {'response_type': 'code',
                   'client_id': app_key,
                   'redirect_uri': redirect_uri}
@@ -68,10 +68,10 @@ class Dropbox:
         uri = 'https://www.dropbox.com/oauth2/authorize?' + params_encoded
         webbrowser.open(uri)
 
-        #2. Obtener auth_code mediante servidor local
+        #2. auth_code-a lortu zerbitzari lokaletik
         auth_code = self.local_server()
 
-        #3. Intercambiar auth_code por access_token
+        #3. auth_code-a aldatu access_token-agatik
         params = {'code': auth_code,
                   'grant_type': 'authorization_code',
                   'client_id': app_key,
@@ -98,13 +98,14 @@ class Dropbox:
         # Y PROCESAMIENTO DE LA RESPUESTA HTTP
         #############################################
 
-        path = "" if self._path == "/" else self._path
+        path = "" if self._path == "/" else self._path.rstrip('/')
 
         datos = json.dumps({'path': path})
         cabeceras = { 'Authorization': 'Bearer ' + self._access_token,
                       'Content-Type': 'application/json'}
         respuesta = requests.post(uri, headers=cabeceras, data=datos)
         print("\tStatus: " + str(respuesta.status_code))
+        print("\tRespuesta: " + respuesta.text)
         contenido_json = respuesta.json()
 
         self._files = helper.update_listbox2(msg_listbox, self._path, contenido_json)
