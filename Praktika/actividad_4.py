@@ -81,6 +81,48 @@ def delete_files():
     popup.destroy()
     dropbox.list_folder(msg_listbox2)
 
+## Funcionalidad extra: renombrar archivos/carpetas
+def rename_file():
+    if not selected_items2:
+        return
+
+    index = selected_items2[0]
+    selected_file = dropbox._files[index]
+
+    popup = tk.Toplevel(newroot)
+    popup.geometry('300x120')
+    popup.title('Rename file')
+    popup.iconbitmap('./favicon.ico')
+    helper.center(popup)
+
+    frame = tk.Frame(popup, padx=10, pady=10)
+    frame.pack(fill=tk.BOTH, expand=True)
+
+    label = tk.Label(frame, text="New name:")
+    label.pack(side=tk.TOP)
+
+    entry = tk.Entry(frame, width=35)
+    entry.insert(0, selected_file['name'])
+    entry.pack(side=tk.TOP)
+
+    def do_rename():
+        new_name = entry.get()
+
+        if dropbox._path == "/":
+            old_path = "/" + selected_file['name']
+            new_path = "/" + new_name
+        else:
+            old_path = dropbox._path + "/" + selected_file['name']
+            new_path = dropbox._path + "/" + new_name
+
+        dropbox.rename_file(old_path, new_path)
+
+        popup.destroy()
+        dropbox.list_folder(msg_listbox2)
+
+    button = tk.Button(frame, text="Rename", command=do_rename)
+    button.pack(side=tk.TOP, pady=10)
+
 def name_folder(folder_name):
     if dropbox._path == "/":
         dropbox._path = dropbox._path + str(folder_name)
@@ -250,6 +292,8 @@ button2 = tk.Button(frame2, borderwidth=4,  background="#C6185C",fg="white", tex
 button2.pack(padx=2, pady=2)
 button3 = tk.Button(frame2, borderwidth=4, background="#7C86FF",fg="white", text="Create folder", width=10, pady=8, command=create_folder)
 button3.pack(padx=2, pady=2)
+button4 = tk.Button(frame2, borderwidth=4, background="#4CAF50", fg="white", text="Rename", width=10, pady=8, command=rename_file)
+button4.pack(padx=2, pady=2)
 frame2.grid(row=1, column=3,  ipadx=10, ipady=10)
 
 for each in pdfs:

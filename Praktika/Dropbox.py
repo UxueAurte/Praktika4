@@ -6,8 +6,8 @@ import json
 import helper
 
 
-app_key = ''   # os los paso por was
-app_secret = ''
+app_key = '8vcak33a0tc5yw7'   # os los paso por was
+app_secret = 'zuwgyplfgbb4mwx'
 server_addr = "localhost"
 server_port = 8070
 redirect_uri = "http://" + server_addr + ":" + str(server_port)
@@ -166,3 +166,26 @@ class Dropbox:
 
         respuesta = requests.post(uri, headers=cabeceras, data=datos)
         print("\tStatus create_folder: " + str(respuesta.status_code))
+
+    ## Funcionalidad extra: renombrar archivos/carpetas
+    def rename_file(self, old_path, new_path):
+        print("/move_v2 (rename)")
+        uri = 'https://api.dropboxapi.com/2/files/move_v2'
+
+        datos = json.dumps({
+            'from_path': old_path,
+            'to_path': new_path,
+            'allow_shared_folder': False,
+            'autorename': False,
+            'allow_ownership_transfer': False
+        })
+
+        cabeceras = {
+            'Authorization': 'Bearer ' + self._access_token,
+            'Content-Type': 'application/json'
+        }
+
+        respuesta = requests.post(uri, headers=cabeceras, data=datos)
+
+        print("\tStatus rename: " + str(respuesta.status_code))
+        print("\tRespuesta: " + respuesta.text)
