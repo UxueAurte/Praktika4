@@ -6,6 +6,7 @@ import Dropbox
 import helper
 import time
 from urllib.parse import unquote
+import tempfile
 
 ##########################################################################################################
 
@@ -122,6 +123,37 @@ def rename_file():
 
     button = tk.Button(frame, text="Rename", command=do_rename)
     button.pack(side=tk.TOP, pady=10)
+
+## Funcionalidad extra: abrir el pdf
+def open_file():
+
+    if not selected_items2:
+        return
+
+    index = selected_items2[0]
+
+    selected_file = dropbox._files[index]
+
+    # No abrir carpetas
+    if selected_file['.tag'] == 'folder':
+        return
+
+    # Carpeta temporal del sistema
+    temp_dir = tempfile.gettempdir()
+
+    local_path = os.path.join(temp_dir, selected_file['name'])
+
+    # Ruta en Dropbox
+    if dropbox._path == "/":
+        dropbox_path = "/" + selected_file['name']
+    else:
+        dropbox_path = dropbox._path + "/" + selected_file['name']
+
+    # Descargar archivo
+    dropbox.download_file(dropbox_path, local_path)
+
+    # Abrir archivo automáticamente
+    os.startfile(local_path)
 
 def name_folder(folder_name):
     if dropbox._path == "/":
@@ -320,6 +352,16 @@ button4.pack(padx=2, pady=2)
 button5 = tk.Button(frame2, borderwidth=4, background="#FF9800", fg="white", text="Search", width=10, pady=8, command=search_files)
 button5.pack(padx=2, pady=2)
 frame2.grid(row=1, column=3,  ipadx=10, ipady=10)
+button6 = tk.Button(frame2,
+                    borderwidth=4,
+                    background="#2196F3",
+                    fg="white",
+                    text="Open",
+                    width=10,
+                    pady=8,
+                    command=open_file)
+
+button6.pack(padx=2, pady=2)
 
 for each in pdfs:
     msg_listbox1.insert(tk.END, each['pdf_name'])
