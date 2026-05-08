@@ -1,3 +1,5 @@
+from importlib.metadata import metadata
+
 import requests
 import urllib
 import webbrowser
@@ -6,8 +8,8 @@ import json
 import helper
 
 
-app_key = '8vcak33a0tc5yw7'   # os los paso por was
-app_secret = 'zuwgyplfgbb4mwx'
+app_key = ''
+app_secret = ''
 server_addr = "localhost"
 server_port = 8070
 redirect_uri = "http://" + server_addr + ":" + str(server_port)
@@ -189,3 +191,35 @@ class Dropbox:
 
         print("\tStatus rename: " + str(respuesta.status_code))
         print("\tRespuesta: " + respuesta.text)
+
+    # Funtzionalitate extra: Bilatzailea
+    def search_file(self, quey, msg_listbox):
+        print("/search_v2")
+        uri = 'https://api.dropboxapi.com/2/files/search_v2'
+
+        datos = json.dumps({'query': quey})
+        cabeceras = {'Authorization': 'Bearer ' + self._access_token,
+                     'Content-Type': 'application/json'}
+
+        respuesta = requests.post(uri, headers=cabeceras, data=datos)
+        print("\tStatus search: " + str(respuesta.status_code))
+
+        contenido_json = respuesta.json()
+
+        msg_listbox.delete(0, 'end')
+        self._files = []
+
+        matches = contenido_json.get('matches', [])
+        for match in matches:
+            metadata = match['metadata']['metadata']
+            name = metadata.get('name', '')
+            tag = metadata.get('.tag', 'file')
+            path_lower = metadata.get('path_lower', '')
+            file_id = metadata.get('id', '')
+
+            msg_listbox.insert('end', name)
+            if tag == 'folder' :
+                msg_listbox.itemconfigure('end', background="#7C86FF")
+
+            self._files.append({'id': file_id, 'name': name, '.tag': tag})
+

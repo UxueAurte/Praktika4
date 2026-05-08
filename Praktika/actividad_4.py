@@ -185,6 +185,29 @@ def on_double_clicking2(event):
                 dropbox._path = dropbox._path + '/' + selected_file['name']
     var.set(dropbox._path)
     dropbox.list_folder(msg_listbox2)
+# Bilaketa funtzioa
+def search_files():
+    popup = tk.Toplevel(newroot)
+    popup.geometry('250x100')
+    popup.title('Search in Dropbox')
+    popup.iconbitmap('./favicon.ico')
+    helper.center(popup)
+
+    frame = tk.Frame(popup, padx=10, pady=10)
+    frame.pack(fill=tk.BOTH, expand=True)
+
+    label = tk.Label(frame, text="Search:")
+    label.pack(side=tk.TOP)
+    entry = tk.Entry(frame, width=35)
+    entry.pack(side=tk.TOP)
+
+    def do_search():
+        query = entry.get()
+        dropbox.search_file(query, msg_listbox2)
+        popup.destroy()
+
+    button = tk.Button(frame, text="Search", command=do_search)
+    button.pack(side=tk.TOP, pady=5)
 ##########################################################################################################
 # Login eGela
 root = tk.Tk()
@@ -294,6 +317,8 @@ button3 = tk.Button(frame2, borderwidth=4, background="#7C86FF",fg="white", text
 button3.pack(padx=2, pady=2)
 button4 = tk.Button(frame2, borderwidth=4, background="#4CAF50", fg="white", text="Rename", width=10, pady=8, command=rename_file)
 button4.pack(padx=2, pady=2)
+button5 = tk.Button(frame2, borderwidth=4, background="#FF9800", fg="white", text="Search", width=10, pady=8, command=search_files)
+button5.pack(padx=2, pady=2)
 frame2.grid(row=1, column=3,  ipadx=10, ipady=10)
 
 for each in pdfs:
