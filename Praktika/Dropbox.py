@@ -245,3 +245,26 @@ class Dropbox:
             with open(local_path, 'wb') as f:
                 f.write(respuesta.content)
 
+    ## Funcionalidad extra: descargar archivo permanentemente
+    def save_file(self, dropbox_path, local_path):
+
+        print("/download_to_pc")
+
+        uri = 'https://content.dropboxapi.com/2/files/download'
+
+        cabeceras = {
+            'Authorization': 'Bearer ' + self._access_token,
+            'Dropbox-API-Arg': json.dumps({
+                'path': dropbox_path
+            })
+        }
+
+        respuesta = requests.post(uri, headers=cabeceras)
+
+        print("\tStatus download: " + str(respuesta.status_code))
+
+        if respuesta.status_code == 200:
+            with open(local_path, 'wb') as f:
+                f.write(respuesta.content)
+
+            print("\tSaved in: " + local_path)

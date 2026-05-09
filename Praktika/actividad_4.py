@@ -7,6 +7,7 @@ import helper
 import time
 from urllib.parse import unquote
 import tempfile
+from tkinter import filedialog
 
 ##########################################################################################################
 
@@ -154,6 +155,42 @@ def open_file():
 
     # Abrir archivo automáticamente
     os.startfile(local_path)
+
+## Funcionalidad extra: guardar archivo en el PC
+def save_file_pc():
+
+    if not selected_items2:
+        return
+
+    index = selected_items2[0]
+
+    selected_file = dropbox._files[index]
+
+    # No descargar carpetas
+    if selected_file['.tag'] == 'folder':
+        return
+
+    # Elegir dónde guardar
+    local_path = filedialog.asksaveasfilename(
+        initialfile=selected_file['name'],
+        title="Save file",
+        defaultextension=".pdf"
+    )
+
+    # Si cancela
+    if not local_path:
+        return
+
+    # Ruta Dropbox
+    if dropbox._path == "/":
+        dropbox_path = "/" + selected_file['name']
+    else:
+        dropbox_path = dropbox._path + "/" + selected_file['name']
+
+    # Descargar
+    dropbox.save_file(dropbox_path, local_path)
+
+    print("Archivo guardado correctamente")
 
 def name_folder(folder_name):
     if dropbox._path == "/":
@@ -352,16 +389,10 @@ button4.pack(padx=2, pady=2)
 button5 = tk.Button(frame2, borderwidth=4, background="#FF9800", fg="white", text="Search", width=10, pady=8, command=search_files)
 button5.pack(padx=2, pady=2)
 frame2.grid(row=1, column=3,  ipadx=10, ipady=10)
-button6 = tk.Button(frame2,
-                    borderwidth=4,
-                    background="#2196F3",
-                    fg="white",
-                    text="Open",
-                    width=10,
-                    pady=8,
-                    command=open_file)
-
+button6 = tk.Button(frame2, borderwidth=4, background="#2196F3", fg="white", text="Open", width=10, pady=8, command=open_file)
 button6.pack(padx=2, pady=2)
+button7 = tk.Button(frame2, borderwidth=4, background="#9C27B0", fg="white", text="Save to PC", width=10, pady=8, command=save_file_pc)
+button7.pack(padx=2, pady=2)
 
 for each in pdfs:
     msg_listbox1.insert(tk.END, each['pdf_name'])
