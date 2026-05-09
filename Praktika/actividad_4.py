@@ -192,6 +192,59 @@ def save_file_pc():
 
     print("Archivo guardado correctamente")
 
+## Funcionalidad extra: mostrar información del archivo
+def show_info():
+
+    if not selected_items2:
+        return
+
+    index = selected_items2[0]
+
+    selected_file = dropbox._files[index]
+
+    popup = tk.Toplevel(newroot)
+    popup.geometry('400x250')
+    popup.title('File information')
+    popup.iconbitmap('./favicon.ico')
+    helper.center(popup)
+
+    frame = tk.Frame(popup, padx=15, pady=15)
+    frame.pack(fill=tk.BOTH, expand=True)
+
+    # Obtener datos
+    name = selected_file.get('name', 'Unknown')
+    file_id = selected_file.get('id', 'Unknown')
+    file_type = selected_file.get('.tag', 'Unknown')
+
+    # Ruta
+    if dropbox._path == "/":
+        full_path = "/" + name
+    else:
+        full_path = dropbox._path + "/" + name
+
+    # Tamaño
+    size = selected_file.get('size', None)
+
+    if size is not None:
+        size_text = str(size) + " bytes"
+    else:
+        size_text = "Folder"
+
+    info_text = (
+        f"Name: {name}\n\n"
+        f"Type: {file_type}\n\n"
+        f"Size: {size_text}\n\n"
+        f"ID: {file_id}\n\n"
+        f"Path: {full_path}"
+    )
+
+    label = tk.Label(frame,
+                     text=info_text,
+                     justify=tk.LEFT,
+                     anchor='w')
+
+    label.pack(fill=tk.BOTH, expand=True)
+
 def name_folder(folder_name):
     if dropbox._path == "/":
         dropbox._path = dropbox._path + str(folder_name)
@@ -393,6 +446,8 @@ button6 = tk.Button(frame2, borderwidth=4, background="#2196F3", fg="white", tex
 button6.pack(padx=2, pady=2)
 button7 = tk.Button(frame2, borderwidth=4, background="#9C27B0", fg="white", text="Save to PC", width=10, pady=8, command=save_file_pc)
 button7.pack(padx=2, pady=2)
+button8 = tk.Button(frame2, borderwidth=4, background="#607D8B", fg="white", text="Info", width=10, pady=8, command=show_info)
+button8.pack(padx=2, pady=2)
 
 for each in pdfs:
     msg_listbox1.insert(tk.END, each['pdf_name'])
